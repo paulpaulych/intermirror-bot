@@ -25,10 +25,14 @@ class ChannelRepository(
     private val database: Database
 ) {
 
-    fun create(channel: Channel) {
-        database.insert(ChannelTable) {
-            set(it.id, channel.id)
-            set(it.name, channel.name)
+    fun save(channel: Channel) {
+        if (get(channel.id) == null) {
+            database.insert(ChannelTable) {
+                set(it.id, channel.id)
+                set(it.name, channel.name)
+            }
+        } else {
+            update(channel)
         }
     }
 
@@ -37,6 +41,16 @@ class ChannelRepository(
             .from(ChannelTable)
             .select()
             .where { ChannelTable.id eq id }
+            .map(ChannelTable::createEntity)
+            .map(::toChannel)
+            .firstOrNull()
+    }
+
+    fun getByName(name: String): Channel? {
+        return database
+            .from(ChannelTable)
+            .select()
+            .where { ChannelTable.name eq name }
             .map(ChannelTable::createEntity)
             .map(::toChannel)
             .firstOrNull()

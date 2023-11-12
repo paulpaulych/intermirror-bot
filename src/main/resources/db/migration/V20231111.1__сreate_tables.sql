@@ -11,5 +11,5 @@ create table mirroring(
 create table mirroring_target(
     id uuid primary key,
     mirroring_id uuid not null references mirroring(id),
-    tgt_channel_id text not null references channel(id)
+    tgt_channel_id uuid not null references channel(id)
 );
