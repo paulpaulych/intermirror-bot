@@ -30,7 +30,7 @@ dependencies {
 	implementation("org.flywaydb:flyway-core")
 	runtimeOnly("org.postgresql:postgresql")
 
-	implementation("io.github.kotlin-telegram-bot.kotlin-telegram-bot:telegram:6.1.0")
+	implementation("dev.inmo:tgbotapi:9.3.0")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 }

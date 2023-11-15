@@ -1,6 +1,7 @@
 package com.github.paulpaulych.intermirrorbot.bot
 
-import com.github.paulpaulych.intermirrorbot.bot.commands.IdCommandHandler
+import com.github.paulpaulych.intermirrorbot.service.ChannelService
+import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.annotation.Bean
@@ -16,11 +17,11 @@ class BotConfig(
 ) {
 
     @Bean
-    fun init() = TgBot(
+    fun init(channelService: ChannelService, updateHandlers: Set<TypedUpdateHandler<*>>) = TgBot(
         token = token,
-        commandHandlers = mapOf(
-            "id" to IdCommandHandler
-        )
+        onUpdate = { update, bot ->
+            HandlersCollection(handlers = updateHandlers).onUpdate(update, bot)
+        }
     )
 }
 
@@ -31,6 +32,8 @@ class BotInitializer(
 
     @EventListener(ApplicationReadyEvent::class)
     fun doSomethingAfterStartup() {
-        bot.start()
+        runBlocking {
+            bot.start()
+        }
     }
 }
