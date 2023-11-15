@@ -2,7 +2,6 @@ package com.github.paulpaulych.intermirrorbot.domain
 
 import java.util.*
 
-
 data class TgChannel(
     val id: UUID,
     val chatId: Long,
@@ -22,14 +21,3 @@ data class TgChannel(
 
     fun deactivate(): TgChannel = this.copy(status = ChannelStatus.INACTIVE)
 }
-
-data class Mirroring(
-    val id: UUID,
-    val srcChannelId: UUID,
-    val targets: List<MirroringTarget>
-)
-
-data class MirroringTarget(
-    val channelId: UUID
-)
-

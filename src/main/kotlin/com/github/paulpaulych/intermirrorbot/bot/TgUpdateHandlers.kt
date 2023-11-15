@@ -1,11 +1,14 @@
 package com.github.paulpaulych.intermirrorbot.bot
 
 import com.github.paulpaulych.intermirrorbot.service.ChannelService
+import com.github.paulpaulych.intermirrorbot.service.MirroringService
 import dev.inmo.tgbotapi.bot.TelegramBot
+import dev.inmo.tgbotapi.extensions.utils.extensions.raw.text
 import dev.inmo.tgbotapi.types.chat.ChannelChat
 import dev.inmo.tgbotapi.types.chat.member.AdministratorChatMember
 import dev.inmo.tgbotapi.types.chat.member.BannedChatMember
 import dev.inmo.tgbotapi.types.chat.member.LeftChatMember
+import dev.inmo.tgbotapi.types.update.ChannelPostUpdate
 import dev.inmo.tgbotapi.types.update.MyChatMemberUpdatedUpdate
 import dev.inmo.tgbotapi.types.update.abstracts.Update
 import org.slf4j.Logger
@@ -34,6 +37,33 @@ class TgUpdateHandlers {
         }
     }
 
+    @Bean
+    fun onChannelPost(mirroringService: MirroringService) = onUpdate<ChannelPostUpdate> { update ->
+        val message = update.data
+        val text = message.text
+        if (text == null) {
+            logger.debug("message.text is null. Update ignored")
+            return@onUpdate
+        }
+        if (text.startsWith("/")) {
+            logger.info("received command: $text")
+            when {
+                text.startsWith("/add_src") -> {
+                    mirroringService.startMirroringFromChannel(message.chat.id.chatId)
+                }
+                text.startsWith("/add_tgt") -> {
+                    val tgtChatId = text.substringAfter("/add_tgt")
+                        .takeIf { it.startsWith("?") }
+                        ?.substringAfter("?")
+                        ?.toLong()
+                        ?: error("no tgt chat id in command: $text")
+                    mirroringService.addTarget(message.chat.id.chatId, tgtChatId)
+                }
+            }
+            return@onUpdate
+        }
+        mirroringService.mirror(update.data, bot)
+    }
 
     class HandlerContext(
         val bot: TelegramBot,
