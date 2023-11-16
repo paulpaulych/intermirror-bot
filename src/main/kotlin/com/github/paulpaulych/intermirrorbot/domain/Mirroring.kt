@@ -14,8 +14,20 @@ data class Mirroring(
         }
     }
 
-    fun addTarget(channelId: UUID): Mirroring {
-        return this.copy(targets = targets + MirroringTarget(channelId))
+    init {
+        if (targets.any { it.channelId == srcChannelId }) {
+            throw DomainException("cannot mirror to the same channel")
+        }
+    }
+
+    fun addTarget(channelId: UUID, lang: Language): Mirroring {
+        if (targets.any { it.channelId == channelId }) {
+            throw DomainException("mirroring target with channelId=$channelId already exists")
+        }
+        if (targets.any { it.lang == lang }) {
+            throw DomainException("mirroring target with lang=$lang already exists")
+        }
+        return this.copy(targets = targets + MirroringTarget(channelId, lang))
     }
 
     fun removeMirroringTarget(channelId: UUID): Mirroring {
@@ -24,6 +36,7 @@ data class Mirroring(
 }
 
 data class MirroringTarget(
-    val channelId: UUID
+    val channelId: UUID,
+    val lang: Language
 )
 

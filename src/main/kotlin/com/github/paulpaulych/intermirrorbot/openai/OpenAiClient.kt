@@ -27,8 +27,8 @@ class OpenAiClient(
             .bodyValue(request)
             .retrieve()
             .bodyToMono(OpenAiResponse::class.java)
-            .flatMap { openAiResponse -> toAssistantCompletion(openAiResponse) }
-            .onErrorMap { e -> toReadableError(e) }
+            .flatMap(this::toAssistantCompletion)
+            .onErrorMap(this::toReadableError)
             .switchIfEmpty(Mono.error(IllegalStateException("OpenAI request resulted with empty mono")))
             .awaitSingle()
     }

@@ -19,7 +19,9 @@ create unique index on mirroring (src_channel_id);
 create table mirroring_target
 (
     channel_id uuid primary key references channel (id),
-    mirroring_id   uuid not null references mirroring (id)
+    mirroring_id   uuid not null references mirroring (id),
+    lang text not null
 );
 
 create unique index on mirroring_target (mirroring_id, channel_id);
+create unique index on mirroring_target (mirroring_id, lang);

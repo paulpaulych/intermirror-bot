@@ -1,5 +1,6 @@
 package com.github.paulpaulych.intermirrorbot.dao
 
+import com.github.paulpaulych.intermirrorbot.domain.Language
 import com.github.paulpaulych.intermirrorbot.domain.Mirroring
 import com.github.paulpaulych.intermirrorbot.domain.MirroringTarget
 import jakarta.persistence.*
@@ -23,7 +24,9 @@ class MirroringTargetEntity(
     @Column(name = "channel_id")
     val channelId: UUID,
     @Column(name = "mirroring_id")
-    val mirroringId: UUID
+    val mirroringId: UUID,
+    @Enumerated(value=EnumType.STRING)
+    val lang: Language
 )
 
 @Repository
@@ -39,7 +42,8 @@ class MirroringRepository(
         mirroring.targets.forEach { tgt ->
             entityManager.merge(MirroringTargetEntity(
                 channelId = tgt.channelId,
-                mirroringId = mirroring.id
+                mirroringId = mirroring.id,
+                lang = tgt.lang
             ))
         }
     }
@@ -74,7 +78,8 @@ class MirroringRepository(
 
     private fun toMirroringTarget(entity: MirroringTargetEntity): MirroringTarget {
         return MirroringTarget(
-            channelId = entity.channelId
+            channelId = entity.channelId,
+            lang = entity.lang
         )
     }
 }
