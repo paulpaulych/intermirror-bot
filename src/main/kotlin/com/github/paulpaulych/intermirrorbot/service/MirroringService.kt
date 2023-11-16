@@ -45,6 +45,7 @@ class MirroringService(
         logger.info("added target ${tgtChannel.title} to mirroring ${mirroring.id}")
     }
 
+    // TODO make it persistently async
     @Transactional
     suspend fun mirror(message: Message, bot: TelegramBot) {
         val srcChannel = channelRepository.getByChatId(message.chat.id.chatId)
