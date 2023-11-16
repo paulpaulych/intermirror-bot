@@ -3,6 +3,9 @@ package com.github.paulpaulych.intermirrorbot.service
 import com.github.paulpaulych.intermirrorbot.dao.ChannelRepository
 import com.github.paulpaulych.intermirrorbot.dao.MirroringRepository
 import com.github.paulpaulych.intermirrorbot.domain.Mirroring
+import com.github.paulpaulych.intermirrorbot.openai.OpenAiClient
+import com.github.paulpaulych.intermirrorbot.openai.OpenAiMessage
+import com.github.paulpaulych.intermirrorbot.openai.OpenAiRole
 import dev.inmo.tgbotapi.bot.TelegramBot
 import dev.inmo.tgbotapi.extensions.utils.extensions.raw.text
 import dev.inmo.tgbotapi.requests.send.SendTextMessage
@@ -15,7 +18,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class MirroringService(
     private val channelRepository: ChannelRepository,
-    private val mirroringRepository: MirroringRepository
+    private val mirroringRepository: MirroringRepository,
+    private val openAiClient: OpenAiClient
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -36,7 +40,7 @@ class MirroringService(
         val tgtChannel = channelRepository.getByChatId(tgtChatId)
             ?: error("channel not found by chatId=$tgtChatId")
         val mirroring = mirroringRepository.getBySrcChannelId(srcChannel.id)
-            ?: error("mirroring not found by srcChannelId=${srcChannel.id}")
+            ?: error("mirroring not found for channel ${srcChannel.title}")
         mirroringRepository.save(mirroring.addTarget(tgtChannel.id))
         logger.info("added target ${tgtChannel.title} to mirroring ${mirroring.id}")
     }
@@ -46,15 +50,30 @@ class MirroringService(
         val srcChannel = channelRepository.getByChatId(message.chat.id.chatId)
             ?: error("channel not found by chatId=${message.chat.id.chatId}")
         val mirroring = mirroringRepository.getBySrcChannelId(srcChannel.id)
-            ?: error("mirroring not found by srcChannelId=${srcChannel.id}")
+        if (mirroring == null) {
+            logger.info("mirroring not configured for channel ${srcChannel.title}. Ignoring message.")
+            return
+        }
+        val translated = message.text
+            ?.takeIf { it.isNotBlank() }
+            ?.let { translateText(it) }
+            ?: ""
         mirroring.targets.forEach { tgt ->
             val tgtChannel = channelRepository.getById(tgt.channelId)
                 ?: error("channel not found by chatId=${tgt.channelId}")
             bot.execute(SendTextMessage(
                 chatId = ChatId(tgtChannel.chatId),
-                text = message.text ?: ""
+                text = translated
             ))
         }
         logger.info("mirrored message from ${srcChannel.title} to ${mirroring.targets.size} channels")
+    }
+
+    private suspend fun translateText(text: String): String {
+        val response = openAiClient.getAssistantResponse(listOf(
+            OpenAiMessage(OpenAiRole.SYSTEM, "Translate all user messages from Russian to English. Keep original formatting and style."),
+            OpenAiMessage(OpenAiRole.USER, text),
+        ))
+        return response.message.content
     }
 }

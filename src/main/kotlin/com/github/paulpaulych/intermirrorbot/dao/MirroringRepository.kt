@@ -54,7 +54,8 @@ class MirroringRepository(
             .selectWithCriteria<MirroringEntity> { q ->
                 q.where(equal(q.from(MirroringEntity::class.java).get<UUID>("srcChannelId"), srcChannelId))
             }
-            .singleResult
+            .resultList
+            .firstOrNull()
             ?.let(::toMirroring)
     }
 
