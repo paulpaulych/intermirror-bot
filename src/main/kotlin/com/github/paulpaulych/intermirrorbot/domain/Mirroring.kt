@@ -9,12 +9,17 @@ data class Mirroring(
     val targets: List<MirroringTarget>
 ) {
     companion object {
+        private const val MAX_TARGETS_PER_MIRRORING = 10
+
         fun create(srcChannelId: UUID): Mirroring {
             return Mirroring(UUID.randomUUID(), srcChannelId, listOf())
         }
     }
 
     init {
+        if (targets.size > MAX_TARGETS_PER_MIRRORING) {
+            throw DomainException("too many mirroring targets. Max is $MAX_TARGETS_PER_MIRRORING")
+        }
         if (targets.any { it.channelId == srcChannelId }) {
             throw DomainException("cannot mirror to the same channel")
         }
