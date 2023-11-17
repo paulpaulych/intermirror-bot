@@ -69,10 +69,10 @@ class MirroringService(
             return
         }
 
-        val markdown = message.asContentMessage()?.content
+        val content = message.asContentMessage()?.content
 
         val newLinks = mirroring.targets.map { tgt ->
-            createTranslatedCopy(tgt, message, bot, markdown)
+            createTranslatedCopy(tgt, message, bot, content)
         }
 
         editOriginalMessage(bot, message, newLinks)
@@ -114,9 +114,9 @@ class MirroringService(
         val translated = content
             ?.joinToString(NEWLINE)
             ?.takeIf { it.isNotBlank() }
-            ?.let { translateMarkdown(it, tgt.lang) }
+            ?.let { translate(it, tgt.lang) }
             ?: ""
-        val resultText = addFooter(message, translated)
+        val resultText = addFooter(message, translated, tgt.lang)
 
         val result = bot.execute(SendTextMessage(
             chatId = ChatId(tgtChannel.chatId),
@@ -130,13 +130,12 @@ class MirroringService(
         return Pair(link, tgt.lang)
     }
 
-    private suspend fun translateMarkdown(text: String, language: Language): String {
+    private suspend fun translate(text: String, language: Language): String {
         val response = openAiClient.getAssistantResponse(listOf(
             OpenAiMessage(OpenAiRole.SYSTEM,
                 """
                     Translate all user messages to ${language.readableName}.
-                    The incoming messages will be in HTML-like format.
-                    Remember to escape characters that are not part of markdown markup with \\.
+                    The incoming messages will be in XML-like format.
                     Keep original formatting and style.
                 """.trimIndent()
             ),
@@ -145,15 +144,16 @@ class MirroringService(
         return response.message.content
     }
 
-    private suspend fun addFooter(originalMsg: Message, text: String): String {
+    private suspend fun addFooter(originalMsg: Message, text: String, tgtLanguage: Language): String {
         val messageLink = originalMsg.messageLink
             ?: error("messageLink is null")
         val intermirrorLink = buildLink("https://github.com/paulpaulych/intermirror-bot", "Intermirror")
         val openaiLink = buildLink("https://openai.com", "OpenAI")
-        val originalPostLink = buildLink(messageLink, "here")
+        val (originalPostText, isHere) = tgtLanguage.originalPostLinkText()
+        val originalPostLinkText = buildLink(messageLink, text= isHere)
         return text +
-            NEWLINE + NEWLINE + "Original post is $originalPostLink" +
-            NEWLINE + "Translated by $intermirrorLink and $openaiLink"
+            NEWLINE + NEWLINE + "$originalPostText $originalPostLinkText" +
+            NEWLINE + "${tgtLanguage.translatedBy()} $intermirrorLink ${tgtLanguage.and()} $openaiLink"
     }
 
     companion object {
