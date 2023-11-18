@@ -1,4 +1,4 @@
-package com.github.paulpaulych.intermirrorbot.dao
+package com.github.paulpaulych.intermirrorbot.core.dao
 
 import jakarta.persistence.EntityManager
 import jakarta.persistence.TypedQuery

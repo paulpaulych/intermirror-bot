@@ -1,8 +1,8 @@
-package com.github.paulpaulych.intermirrorbot.dao
+package com.github.paulpaulych.intermirrorbot.core.dao
 
-import com.github.paulpaulych.intermirrorbot.domain.Language
-import com.github.paulpaulych.intermirrorbot.domain.Mirroring
-import com.github.paulpaulych.intermirrorbot.domain.MirroringTarget
+import com.github.paulpaulych.intermirrorbot.core.domain.Language
+import com.github.paulpaulych.intermirrorbot.core.domain.Mirroring
+import com.github.paulpaulych.intermirrorbot.core.domain.MirroringTarget
 import jakarta.persistence.*
 import org.springframework.stereotype.Repository
 import java.util.*
@@ -35,16 +35,20 @@ class MirroringRepository(
 ) {
 
     fun save(mirroring: Mirroring) {
-        entityManager.merge(MirroringEntity(
+        entityManager.merge(
+            MirroringEntity(
             id = mirroring.id,
             srcChannelId = mirroring.srcChannelId
-        ))
+        )
+        )
         mirroring.targets.forEach { tgt ->
-            entityManager.merge(MirroringTargetEntity(
+            entityManager.merge(
+                MirroringTargetEntity(
                 channelId = tgt.channelId,
                 mirroringId = mirroring.id,
                 lang = tgt.lang
-            ))
+            )
+            )
         }
     }
 

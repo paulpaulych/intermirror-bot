@@ -1,10 +1,11 @@
-package com.github.paulpaulych.intermirrorbot.service
+package com.github.paulpaulych.intermirrorbot.core.service
 
-import com.github.paulpaulych.intermirrorbot.dao.ChannelRepository
-import com.github.paulpaulych.intermirrorbot.dao.MirroringRepository
-import com.github.paulpaulych.intermirrorbot.domain.Language
-import com.github.paulpaulych.intermirrorbot.domain.Mirroring
-import com.github.paulpaulych.intermirrorbot.domain.MirroringTarget
+import com.github.paulpaulych.intermirrorbot.core.dao.ChannelRepository
+import com.github.paulpaulych.intermirrorbot.core.dao.MirroringRepository
+import com.github.paulpaulych.intermirrorbot.core.domain.DomainException
+import com.github.paulpaulych.intermirrorbot.core.domain.Language
+import com.github.paulpaulych.intermirrorbot.core.domain.Mirroring
+import com.github.paulpaulych.intermirrorbot.core.domain.MirroringTarget
 import com.github.paulpaulych.intermirrorbot.openai.OpenAiClient
 import com.github.paulpaulych.intermirrorbot.openai.OpenAiMessage
 import com.github.paulpaulych.intermirrorbot.openai.OpenAiRole
@@ -36,26 +37,39 @@ class MirroringService(
     suspend fun startMirroringFromChannel(chatId: Long) {
         val channel = channelRepository.getByChatId(chatId)
             ?: error("channel not found by chatId=$chatId")
-        val mirroring = Mirroring.create(srcChannelId = channel.id)
-        mirroringRepository.save(mirroring)
-        logger.info("started mirroring from channel ${channel.title}, mirroringId=${mirroring.id}")
+        val mirroring = mirroringRepository.getBySrcChannelId(channel.id)
+        if (mirroring != null) {
+            logger.info("mirroring already started for channel ${channel.title}. Ignoring request.")
+            return
+        }
+        val newMirroring = Mirroring.create(srcChannelId = channel.id)
+        mirroringRepository.save(newMirroring)
+        logger.info("started mirroring from channel ${channel.title}, mirroringId=${newMirroring.id}")
     }
 
     @Transactional
     suspend fun addTarget(
         srcChatId: Long,
         tgtChatId: Long,
-        lang: String
+        lang: Language
     ) {
-        val language = Language.valueOf(lang)
         val srcChannel = channelRepository.getByChatId(srcChatId)
             ?: error("channel not found by chatId=$srcChatId")
         val tgtChannel = channelRepository.getByChatId(tgtChatId)
-            ?: error("channel not found by chatId=$tgtChatId")
+            ?: throw DomainException("channel not found by chatId=$tgtChatId")
         val mirroring = mirroringRepository.getBySrcChannelId(srcChannel.id)
             ?: error("mirroring not found for channel ${srcChannel.title}")
-        mirroringRepository.save(mirroring.addTarget(tgtChannel.id, language))
+        mirroringRepository.save(mirroring.addTarget(tgtChannel.id, lang))
         logger.info("added target chatId=${tgtChatId} title=${tgtChannel.title} to mirroring ${mirroring.id}")
+    }
+
+    @Transactional
+    suspend fun configuredFor(chatId: Long): Boolean {
+        val channel = channelRepository.getByChatId(chatId)
+            ?: return false
+        val mirroring = mirroringRepository.getBySrcChannelId(channel.id)
+            ?: return false
+        return mirroring.hasTargets()
     }
 
     // TODO make it persistently async

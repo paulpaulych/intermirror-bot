@@ -1,4 +1,4 @@
-package com.github.paulpaulych.intermirrorbot.domain
+package com.github.paulpaulych.intermirrorbot.core.domain
 
 enum class Language(
     val readableName: String,
@@ -7,6 +7,13 @@ enum class Language(
     RU("Russian", "Читать на русском"),
     EN("English", "Read in English"),
     ES("Spanish", "Leer en Español");
+
+    companion object {
+        fun byReadableName(name: String) {
+            values().find { it.readableName.equals(name, ignoreCase = true) }
+                ?: throw DomainException("no language with readableName=$name")
+        }
+    }
 
     fun originalPostLinkText(): Pair<String, String> = when (this) {
         RU -> Pair("Оригинальный пост", "здесь")

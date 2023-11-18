@@ -1,13 +1,15 @@
 package com.github.paulpaulych.intermirrorbot.bot
 
-import com.github.paulpaulych.intermirrorbot.service.ChannelService
+import com.github.paulpaulych.intermirrorbot.bot.TelegramUpdatesListeners.HandlersCollection
+import com.github.paulpaulych.intermirrorbot.bot.TelegramUpdatesListeners.TypedUpdateHandler
+import com.github.paulpaulych.intermirrorbot.core.service.ChannelService
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.event.EventListener
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 
 
 @Configuration
@@ -25,15 +27,13 @@ class BotConfig(
     )
 }
 
-@Component
+@Service
 class BotInitializer(
     private val bot: TgBot
 ) {
 
     @EventListener(ApplicationReadyEvent::class)
-    fun doSomethingAfterStartup() {
-        runBlocking {
-            bot.start()
-        }
+    fun init() = runBlocking {
+        bot.start()
     }
 }

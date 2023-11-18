@@ -1,4 +1,4 @@
-package com.github.paulpaulych.intermirrorbot.domain
+package com.github.paulpaulych.intermirrorbot.core.domain
 
 import java.util.*
 

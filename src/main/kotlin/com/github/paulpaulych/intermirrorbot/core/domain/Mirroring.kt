@@ -1,4 +1,4 @@
-package com.github.paulpaulych.intermirrorbot.domain
+package com.github.paulpaulych.intermirrorbot.core.domain
 
 import java.util.*
 
@@ -24,6 +24,8 @@ data class Mirroring(
             throw DomainException("cannot mirror to the same channel")
         }
     }
+
+    fun hasTargets() = targets.isNotEmpty()
 
     fun addTarget(channelId: UUID, lang: Language): Mirroring {
         if (targets.any { it.channelId == channelId }) {

@@ -1,7 +1,7 @@
-package com.github.paulpaulych.intermirrorbot.dao
+package com.github.paulpaulych.intermirrorbot.core.dao
 
-import com.github.paulpaulych.intermirrorbot.domain.TgChannel
-import com.github.paulpaulych.intermirrorbot.domain.TgChannel.ChannelStatus
+import com.github.paulpaulych.intermirrorbot.core.domain.TgChannel
+import com.github.paulpaulych.intermirrorbot.core.domain.TgChannel.ChannelStatus
 import jakarta.persistence.*
 import org.springframework.stereotype.Repository
 import java.util.*
@@ -25,12 +25,14 @@ class ChannelRepository(
 ) {
 
     fun save(channel: TgChannel) {
-        entityManager.merge(ChannelEntity(
+        entityManager.merge(
+            ChannelEntity(
             id = channel.id,
             chatId = channel.chatId,
             title = channel.title,
             status = channel.status
-        ))
+        )
+        )
     }
 
     fun getById(id: UUID): TgChannel? {
@@ -46,6 +48,15 @@ class ChannelRepository(
             .resultList
             .firstOrNull()
             ?.let(::toChannel)
+    }
+
+    fun getByChatTitle(title: String): List<TgChannel> {
+        return entityManager
+            .selectWithCriteria<ChannelEntity> { q ->
+                q.where(this.like(q.from(ChannelEntity::class.java).get("title"), "%$title%"))
+            }
+            .resultList
+            .map(::toChannel)
     }
 
     fun toChannel(entity: ChannelEntity): TgChannel {
